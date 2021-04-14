@@ -1,3 +1,5 @@
+//! A Pong game written in Rust.
+
 use ggez;
 use ggez::event;
 use ggez::graphics;
@@ -17,25 +19,17 @@ const BALL_SIZE_HALF: f32 = BALL_SIZE * 0.5;
 const PLAYER_SPEED: f32 = 600.0;
 const BALL_SPEED: f32 = 500.0;
 
-fn clamp(value: &mut f32, low: f32, high: f32) {
-    if *value < low {
-        *value = low;
-    } else if *value > high {
-        *value = high;
-    }
-}
-
 fn move_racket(pos: &mut na::Point2<f32>, keycode: KeyCode, y_dir: f32, ctx: &mut Context) {
     let dt = ggez::timer::delta(ctx).as_secs_f32();
     let screen_h = graphics::drawable_size(ctx).1;
     if keyboard::is_key_pressed(ctx, keycode) {
         pos.y += y_dir * PLAYER_SPEED * dt;
     }
-    clamp(
-        &mut pos.y,
-        RACKET_HEIGHT_HALF,
-        screen_h - RACKET_HEIGHT_HALF,
-    );
+
+    // clamp pos.y to min/max values
+    pos.y = pos
+        .y
+        .clamp(RACKET_HEIGHT_HALF, screen_h - RACKET_HEIGHT_HALF);
 }
 
 fn randomize_vec(vec: &mut na::Vector2<f32>, x: f32, y: f32) {
@@ -200,7 +194,7 @@ impl event::EventHandler for MainState {
 }
 
 fn main() -> GameResult {
-    let cb = ggez::ContextBuilder::new("pong", "TanTan");
+    let cb = ggez::ContextBuilder::new("rusty_pong", "Philbywhizz");
     let (mut ctx, mut event_loop) = cb.build()?;
     graphics::set_window_title(&ctx, "Rusty Pong");
     let mut state = MainState::new(&mut ctx);
