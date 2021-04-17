@@ -8,6 +8,7 @@ use ggez::nalgebra as na;
 use ggez::{Context, GameResult};
 use rand::{self, thread_rng, Rng};
 
+// Constants
 const PADDING: f32 = 40.0;
 const MIDDLE_LINE_W: f32 = 2.0;
 const RACKET_HEIGHT: f32 = 100.0;
@@ -44,6 +45,7 @@ fn ball_hits_player(player: na::Point2<f32>, ball: na::Point2<f32>) -> bool {
     false
 }
 
+// pick a random direction vector
 fn randomize_vec(vec: &mut na::Vector2<f32>, x: f32, y: f32) {
     let mut rng = thread_rng();
     vec.x = match rng.gen_bool(0.5) {
@@ -76,13 +78,13 @@ impl MainState {
         let mut ball_vel = na::Vector2::new(0.0, 0.0);
         randomize_vec(&mut ball_vel, BALL_SPEED, BALL_SPEED);
 
+        //define the racket
         let racket_rect = graphics::Rect::new(
             -RACKET_WIDTH_HALF,
             -RACKET_HEIGHT_HALF,
             RACKET_WIDTH,
             RACKET_HEIGHT,
         );
-
         let racket_mesh = graphics::Mesh::new_rectangle(
             ctx,
             graphics::DrawMode::fill(),
@@ -90,8 +92,8 @@ impl MainState {
             graphics::WHITE,
         )?;
 
+        // define the ball
         let ball_rect = graphics::Rect::new(-BALL_SIZE_HALF, -BALL_SIZE_HALF, BALL_SIZE, BALL_SIZE);
-
         let ball_mesh = graphics::Mesh::new_rectangle(
             ctx,
             graphics::DrawMode::fill(),
@@ -99,6 +101,7 @@ impl MainState {
             graphics::WHITE,
         )?;
 
+        // define the middle net line
         let middle_rect = graphics::Rect::new(-MIDDLE_LINE_W * 0.5, 0.0, MIDDLE_LINE_W, screen_h);
         let middle_mesh = graphics::Mesh::new_rectangle(
             ctx,
@@ -107,6 +110,7 @@ impl MainState {
             graphics::WHITE,
         )?;
 
+        // return the struct
         Ok(MainState {
             player_1_pos: na::Point2::new(RACKET_WIDTH_HALF + PADDING, screen_h_half),
             player_2_pos: na::Point2::new(screen_w - RACKET_WIDTH_HALF - PADDING, screen_h_half),
@@ -130,14 +134,17 @@ impl event::EventHandler for MainState {
         move_racket(&mut self.player_2_pos, KeyCode::Up, -1.0, ctx);
         move_racket(&mut self.player_2_pos, KeyCode::Down, 1.0, ctx);
 
+        // move the ball
         self.ball_pos += self.ball_vel * dt;
 
+        // ball reached left side of screen
         if self.ball_pos.x < 0.0 {
             self.ball_pos.x = screen_w * 0.5;
             self.ball_pos.y = screen_h * 0.5;
             randomize_vec(&mut self.ball_vel, BALL_SPEED, BALL_SPEED);
             self.player_2_score += 1;
         }
+        // ball reached right side of screen
         if self.ball_pos.x > screen_w {
             self.ball_pos.x = screen_w * 0.5;
             self.ball_pos.y = screen_h * 0.5;

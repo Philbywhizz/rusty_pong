@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Refactored the creation of mesh objects outside of the main loop
 - Refactored racket/ball collision detection
+- Updated rand library 0.7.3 -> 0.8.3
 
 ## 0.1.0 2020-JUL-17
 

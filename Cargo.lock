@@ -1855,7 +1855,7 @@ name = "rusty_pong"
 version = "0.1.1"
 dependencies = [
  "ggez",
- "rand 0.7.3",
+ "rand 0.8.3",
 ]
 
 [[package]]
