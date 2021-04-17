@@ -32,6 +32,18 @@ fn move_racket(pos: &mut na::Point2<f32>, keycode: KeyCode, y_dir: f32, ctx: &mu
         .clamp(RACKET_HEIGHT_HALF, screen_h - RACKET_HEIGHT_HALF);
 }
 
+// If the ball and a racket collides, then return true
+fn ball_hits_player(player: na::Point2<f32>, ball: na::Point2<f32>) -> bool {
+    if ball.x - BALL_SIZE_HALF < player.x + RACKET_WIDTH_HALF
+        && ball.x + BALL_SIZE_HALF > player.x - RACKET_WIDTH_HALF
+        && ball.y - BALL_SIZE_HALF < player.y + RACKET_HEIGHT_HALF
+        && ball.y + BALL_SIZE_HALF > player.y - RACKET_HEIGHT_HALF
+    {
+        return true;
+    }
+    false
+}
+
 fn randomize_vec(vec: &mut na::Vector2<f32>, x: f32, y: f32) {
     let mut rng = thread_rng();
     vec.x = match rng.gen_bool(0.5) {
@@ -142,27 +154,14 @@ impl event::EventHandler for MainState {
             self.ball_vel.y = -self.ball_vel.y.abs();
         }
 
-        let intersects_player_1 = self.ball_pos.x - BALL_SIZE_HALF
-            < self.player_1_pos.x + RACKET_WIDTH_HALF
-            && self.ball_pos.x + BALL_SIZE_HALF > self.player_1_pos.x - RACKET_WIDTH_HALF
-            && self.ball_pos.y - BALL_SIZE_HALF < self.player_1_pos.y + RACKET_HEIGHT_HALF
-            && self.ball_pos.y + BALL_SIZE_HALF > self.player_1_pos.y - RACKET_HEIGHT_HALF;
-
-        // If the ball overlaps player_1 then change direction
-        if intersects_player_1 {
+        if ball_hits_player(self.player_1_pos, self.ball_pos) {
             self.ball_vel.x = self.ball_vel.x.abs();
         }
 
-        let intersects_player_2 = self.ball_pos.x - BALL_SIZE_HALF
-            < self.player_2_pos.x + RACKET_WIDTH_HALF
-            && self.ball_pos.x + BALL_SIZE_HALF > self.player_2_pos.x - RACKET_WIDTH_HALF
-            && self.ball_pos.y - BALL_SIZE_HALF < self.player_2_pos.y + RACKET_HEIGHT_HALF
-            && self.ball_pos.y + BALL_SIZE_HALF > self.player_2_pos.y - RACKET_HEIGHT_HALF;
-
-        // If the ball overlaps player_1 then change direction
-        if intersects_player_2 {
+        if ball_hits_player(self.player_2_pos, self.ball_pos) {
             self.ball_vel.x = -self.ball_vel.x.abs();
         }
+
         Ok(())
     }
 
