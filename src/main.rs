@@ -25,6 +25,7 @@ struct Ball {
     pos: na::Point2<f32>,
     vel: na::Vector2<f32>,
     home: na::Point2<f32>,
+    bounds: na::Point4<f32>,
     mesh: graphics::Mesh,
 }
 
@@ -48,6 +49,30 @@ impl Ball {
     fn update(&mut self, dt: f32) {
         self.pos += self.vel * dt;
     }
+
+    // Test for collisions
+    fn collided_wth(&self) -> CollisionType {
+        if self.pos.x < self.bounds.x {
+            return CollisionType::LeftOOB;
+        } else if self.pos.x > self.bounds.z {
+            return CollisionType::RightOOB;
+        } else if (self.pos.y < self.bounds.y + BALL_SIZE_HALF)
+            || (self.pos.y > self.bounds.w - BALL_SIZE_HALF)
+        {
+            return CollisionType::Wall;
+        }
+        // TODO: Racket collision detection
+
+        return CollisionType::None;
+    }
+}
+
+enum CollisionType {
+    Wall,
+    Racket, // TODO: implement this enum
+    LeftOOB,
+    RightOOB,
+    None,
 }
 
 fn move_racket(pos: &mut na::Point2<f32>, keycode: KeyCode, y_dir: f32, ctx: &mut Context) {
@@ -118,6 +143,7 @@ impl MainState {
             pos: na::Point2::new(screen_w_half, screen_h_half),
             vel: na::Vector2::new(0.0, 0.0),
             home: na::Point2::new(screen_w_half, screen_h_half),
+            bounds: na::Point4::new(0.0, 0.0, screen_w, screen_h),
             mesh: graphics::Mesh::new_rectangle(
                 ctx,
                 graphics::DrawMode::fill(),
@@ -143,7 +169,7 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         let dt = ggez::timer::delta(ctx).as_secs_f32();
-        let (screen_w, screen_h) = graphics::drawable_size(ctx);
+
         move_racket(&mut self.player_1_pos, KeyCode::W, -1.0, ctx);
         move_racket(&mut self.player_1_pos, KeyCode::S, 1.0, ctx);
         move_racket(&mut self.player_2_pos, KeyCode::Up, -1.0, ctx);
@@ -152,24 +178,23 @@ impl event::EventHandler for MainState {
         // move the ball
         self.ball.update(dt);
 
-        // ball reached left side of screen
-        if self.ball.pos.x < 0.0 {
-            self.ball.reset();
-            self.player_2_score += 1;
-        }
-        // ball reached right side of screen
-        if self.ball.pos.x > screen_w {
-            self.ball.reset();
-            self.player_1_score += 1;
-        }
-
-        // ball, Y bounce
-        if self.ball.pos.y < BALL_SIZE_HALF {
-            self.ball.pos.y = BALL_SIZE_HALF;
-            self.ball.vel.y = self.ball.vel.y.abs();
-        } else if self.ball.pos.y > screen_h - BALL_SIZE_HALF {
-            self.ball.pos.y = screen_h - BALL_SIZE_HALF;
-            self.ball.vel.y = -self.ball.vel.y.abs();
+        // check if the ball has collided with anything
+        match self.ball.collided_wth() {
+            CollisionType::LeftOOB => {
+                // ball reached left side of screen
+                self.ball.reset();
+                self.player_2_score += 1;
+            }
+            CollisionType::RightOOB => {
+                // ball reached right side of screen
+                self.ball.reset();
+                self.player_1_score += 1;
+            }
+            CollisionType::Wall => {
+                // bounce the ball into the opposite y direction
+                self.ball.vel.y *= -1.0;
+            }
+            _ => (),
         }
 
         if ball_hits_player(self.player_1_pos, self.ball.pos) {

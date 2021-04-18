@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Refactored the creation of mesh objects outside of the main loop
 - Refactored racket/ball collision detection
+- Collisions are now an enum instead a whole bunch of ifs. It's much cleaner up.
 
 ### Removed
 - [rand](https://crates.io/crates/rand) crate
