@@ -7,11 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - CHANGELOG.md file to track and record changes from the original project
+- [fastrand](https://crates.io/crates/fastrand) crate as its a bit easier to work with
 
 ### Changed
 - Refactored the creation of mesh objects outside of the main loop
 - Refactored racket/ball collision detection
-- Updated rand library 0.7.3 -> 0.8.3
+
+### Removed
+- [rand](https://crates.io/crates/rand) crate
 
 ## 0.1.0 2020-JUL-17
 

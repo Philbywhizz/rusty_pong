@@ -1,12 +1,12 @@
 //! A Pong game written in Rust.
 
+use fastrand;
 use ggez;
 use ggez::event;
 use ggez::graphics;
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::nalgebra as na;
 use ggez::{Context, GameResult};
-use rand::{self, thread_rng, Rng};
 
 // Constants
 const PADDING: f32 = 40.0;
@@ -63,12 +63,11 @@ fn ball_hits_player(player: na::Point2<f32>, ball: na::Point2<f32>) -> bool {
 
 // pick a random direction vector
 fn randomize_vec(vec: &mut na::Vector2<f32>, x: f32, y: f32) {
-    let mut rng = thread_rng();
-    vec.x = match rng.gen_bool(0.5) {
+    vec.x = match fastrand::bool() {
         true => x,
         false => -x,
     };
-    vec.y = match rng.gen_bool(0.5) {
+    vec.y = match fastrand::bool() {
         true => y,
         false => -y,
     };
