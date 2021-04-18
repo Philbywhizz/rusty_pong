@@ -69,7 +69,23 @@ impl Ball {
 
 struct Racket {
     pos: na::Point2<f32>,
+    bounds: na::Point4<f32>,
     mesh: graphics::Mesh,
+}
+
+impl Racket {
+    fn update(&mut self, dt: f32, keycode_up: KeyCode, keycode_down: KeyCode, ctx: &mut Context) {
+        if keyboard::is_key_pressed(ctx, keycode_up) {
+            self.pos.y -= PLAYER_SPEED * dt;
+        }
+        if keyboard::is_key_pressed(ctx, keycode_down) {
+            self.pos.y += PLAYER_SPEED * dt;
+        }
+        self.pos.y = self.pos.y.clamp(
+            self.bounds.x + RACKET_HEIGHT_HALF,
+            self.bounds.w - RACKET_HEIGHT_HALF,
+        );
+    }
 }
 
 enum CollisionType {
@@ -78,19 +94,6 @@ enum CollisionType {
     LeftOOB,
     RightOOB,
     None,
-}
-
-fn move_racket(pos: &mut na::Point2<f32>, keycode: KeyCode, y_dir: f32, ctx: &mut Context) {
-    let dt = ggez::timer::delta(ctx).as_secs_f32();
-    let screen_h = graphics::drawable_size(ctx).1;
-    if keyboard::is_key_pressed(ctx, keycode) {
-        pos.y += y_dir * PLAYER_SPEED * dt;
-    }
-
-    // clamp pos.y to min/max values
-    pos.y = pos
-        .y
-        .clamp(RACKET_HEIGHT_HALF, screen_h - RACKET_HEIGHT_HALF);
 }
 
 // If the ball and a racket collides, then return true
@@ -146,6 +149,7 @@ impl MainState {
         // Create the left paddle
         let racket_left = Racket {
             pos: na::Point2::new(RACKET_WIDTH_HALF + PADDING, screen_h_half),
+            bounds: na::Point4::new(0.0, 0.0, screen_w, screen_h),
             mesh: graphics::Mesh::new_rectangle(
                 ctx,
                 graphics::DrawMode::fill(),
@@ -161,6 +165,7 @@ impl MainState {
 
         let racket_right = Racket {
             pos: na::Point2::new(screen_w - RACKET_WIDTH_HALF - PADDING, screen_h_half),
+            bounds: na::Point4::new(0.0, 0.0, screen_w, screen_h),
             mesh: graphics::Mesh::new_rectangle(
                 ctx,
                 graphics::DrawMode::fill(),
@@ -191,10 +196,9 @@ impl event::EventHandler for MainState {
         let dt = ggez::timer::delta(ctx).as_secs_f32();
 
         // move the rackets
-        move_racket(&mut self.racket_left.pos, KeyCode::W, -1.0, ctx);
-        move_racket(&mut self.racket_left.pos, KeyCode::S, 1.0, ctx);
-        move_racket(&mut self.racket_right.pos, KeyCode::Up, -1.0, ctx);
-        move_racket(&mut self.racket_right.pos, KeyCode::Down, 1.0, ctx);
+        self.racket_left.update(dt, KeyCode::W, KeyCode::S, ctx);
+        self.racket_right
+            .update(dt, KeyCode::Up, KeyCode::Down, ctx);
 
         // move the ball
         self.ball.update(dt);
