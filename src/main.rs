@@ -20,6 +20,13 @@ const BALL_SIZE_HALF: f32 = BALL_SIZE * 0.5;
 const PLAYER_SPEED: f32 = 600.0;
 const BALL_SPEED: f32 = 300.0;
 
+// Structs
+struct Ball {
+    pos: na::Point2<f32>,
+    vel: na::Vector2<f32>,
+    mesh: graphics::Mesh,
+}
+
 fn move_racket(pos: &mut na::Point2<f32>, keycode: KeyCode, y_dir: f32, ctx: &mut Context) {
     let dt = ggez::timer::delta(ctx).as_secs_f32();
     let screen_h = graphics::drawable_size(ctx).1;
@@ -61,12 +68,10 @@ fn randomize_vec(vec: &mut na::Vector2<f32>, x: f32, y: f32) {
 struct MainState {
     player_1_pos: na::Point2<f32>,
     player_2_pos: na::Point2<f32>,
-    ball_pos: na::Point2<f32>,
-    ball_vel: na::Vector2<f32>,
+    ball: Ball,
     player_1_score: i32,
     player_2_score: i32,
     racket_mesh: graphics::Mesh,
-    ball_mesh: graphics::Mesh,
     middle_mesh: graphics::Mesh,
 }
 
@@ -74,9 +79,6 @@ impl MainState {
     pub fn new(ctx: &mut Context) -> GameResult<MainState> {
         let (screen_w, screen_h) = graphics::drawable_size(ctx);
         let (screen_w_half, screen_h_half) = (screen_w * 0.5, screen_h * 0.5);
-
-        let mut ball_vel = na::Vector2::new(0.0, 0.0);
-        randomize_vec(&mut ball_vel, BALL_SPEED, BALL_SPEED);
 
         //define the racket
         let racket_rect = graphics::Rect::new(
@@ -92,15 +94,6 @@ impl MainState {
             graphics::WHITE,
         )?;
 
-        // define the ball
-        let ball_rect = graphics::Rect::new(-BALL_SIZE_HALF, -BALL_SIZE_HALF, BALL_SIZE, BALL_SIZE);
-        let ball_mesh = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            ball_rect,
-            graphics::WHITE,
-        )?;
-
         // define the middle net line
         let middle_rect = graphics::Rect::new(-MIDDLE_LINE_W * 0.5, 0.0, MIDDLE_LINE_W, screen_h);
         let middle_mesh = graphics::Mesh::new_rectangle(
@@ -110,16 +103,27 @@ impl MainState {
             graphics::WHITE,
         )?;
 
+        // Create the ball
+        let mut ball = Ball {
+            pos: na::Point2::new(screen_w_half, screen_h_half),
+            vel: na::Vector2::new(0.0, 0.0),
+            mesh: graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                graphics::Rect::new(-BALL_SIZE_HALF, -BALL_SIZE_HALF, BALL_SIZE, BALL_SIZE),
+                graphics::WHITE,
+            )?,
+        };
+        randomize_vec(&mut ball.vel, BALL_SPEED, BALL_SPEED);
+
         // return the struct
         Ok(MainState {
             player_1_pos: na::Point2::new(RACKET_WIDTH_HALF + PADDING, screen_h_half),
             player_2_pos: na::Point2::new(screen_w - RACKET_WIDTH_HALF - PADDING, screen_h_half),
-            ball_pos: na::Point2::new(screen_w_half, screen_h_half),
-            ball_vel,
+            ball,
             player_1_score: 0,
             player_2_score: 0,
             racket_mesh,
-            ball_mesh,
             middle_mesh,
         })
     }
@@ -135,38 +139,38 @@ impl event::EventHandler for MainState {
         move_racket(&mut self.player_2_pos, KeyCode::Down, 1.0, ctx);
 
         // move the ball
-        self.ball_pos += self.ball_vel * dt;
+        self.ball.pos += self.ball.vel * dt;
 
         // ball reached left side of screen
-        if self.ball_pos.x < 0.0 {
-            self.ball_pos.x = screen_w * 0.5;
-            self.ball_pos.y = screen_h * 0.5;
-            randomize_vec(&mut self.ball_vel, BALL_SPEED, BALL_SPEED);
+        if self.ball.pos.x < 0.0 {
+            self.ball.pos.x = screen_w * 0.5;
+            self.ball.pos.y = screen_h * 0.5;
+            randomize_vec(&mut self.ball.vel, BALL_SPEED, BALL_SPEED);
             self.player_2_score += 1;
         }
         // ball reached right side of screen
-        if self.ball_pos.x > screen_w {
-            self.ball_pos.x = screen_w * 0.5;
-            self.ball_pos.y = screen_h * 0.5;
-            randomize_vec(&mut self.ball_vel, BALL_SPEED, BALL_SPEED);
+        if self.ball.pos.x > screen_w {
+            self.ball.pos.x = screen_w * 0.5;
+            self.ball.pos.y = screen_h * 0.5;
+            randomize_vec(&mut self.ball.vel, BALL_SPEED, BALL_SPEED);
             self.player_1_score += 1;
         }
 
         // ball, Y bounce
-        if self.ball_pos.y < BALL_SIZE_HALF {
-            self.ball_pos.y = BALL_SIZE_HALF;
-            self.ball_vel.y = self.ball_vel.y.abs();
-        } else if self.ball_pos.y > screen_h - BALL_SIZE_HALF {
-            self.ball_pos.y = screen_h - BALL_SIZE_HALF;
-            self.ball_vel.y = -self.ball_vel.y.abs();
+        if self.ball.pos.y < BALL_SIZE_HALF {
+            self.ball.pos.y = BALL_SIZE_HALF;
+            self.ball.vel.y = self.ball.vel.y.abs();
+        } else if self.ball.pos.y > screen_h - BALL_SIZE_HALF {
+            self.ball.pos.y = screen_h - BALL_SIZE_HALF;
+            self.ball.vel.y = -self.ball.vel.y.abs();
         }
 
-        if ball_hits_player(self.player_1_pos, self.ball_pos) {
-            self.ball_vel.x = self.ball_vel.x.abs();
+        if ball_hits_player(self.player_1_pos, self.ball.pos) {
+            self.ball.vel.x = self.ball.vel.x.abs();
         }
 
-        if ball_hits_player(self.player_2_pos, self.ball_pos) {
-            self.ball_vel.x = -self.ball_vel.x.abs();
+        if ball_hits_player(self.player_2_pos, self.ball.pos) {
+            self.ball.vel.x = -self.ball.vel.x.abs();
         }
 
         Ok(())
@@ -193,8 +197,8 @@ impl event::EventHandler for MainState {
         graphics::draw(ctx, &self.racket_mesh, draw_param)?;
 
         // draw ball
-        draw_param.dest = self.ball_pos.into();
-        graphics::draw(ctx, &self.ball_mesh, draw_param)?;
+        draw_param.dest = self.ball.pos.into();
+        graphics::draw(ctx, &self.ball.mesh, draw_param)?;
 
         // calculate score text
         let score_text = graphics::Text::new(format!(
