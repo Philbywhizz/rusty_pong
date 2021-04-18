@@ -24,7 +24,16 @@ const BALL_SPEED: f32 = 300.0;
 struct Ball {
     pos: na::Point2<f32>,
     vel: na::Vector2<f32>,
+    home: na::Point2<f32>,
     mesh: graphics::Mesh,
+}
+
+impl Ball {
+    // Reset the ball back to the home position
+    fn reset(&mut self) {
+        // set pos back to home
+        self.pos = self.home;
+    }
 }
 
 fn move_racket(pos: &mut na::Point2<f32>, keycode: KeyCode, y_dir: f32, ctx: &mut Context) {
@@ -107,6 +116,7 @@ impl MainState {
         let mut ball = Ball {
             pos: na::Point2::new(screen_w_half, screen_h_half),
             vel: na::Vector2::new(0.0, 0.0),
+            home: na::Point2::new(screen_w_half, screen_h_half),
             mesh: graphics::Mesh::new_rectangle(
                 ctx,
                 graphics::DrawMode::fill(),
@@ -143,15 +153,13 @@ impl event::EventHandler for MainState {
 
         // ball reached left side of screen
         if self.ball.pos.x < 0.0 {
-            self.ball.pos.x = screen_w * 0.5;
-            self.ball.pos.y = screen_h * 0.5;
+            self.ball.reset();
             randomize_vec(&mut self.ball.vel, BALL_SPEED, BALL_SPEED);
             self.player_2_score += 1;
         }
         // ball reached right side of screen
         if self.ball.pos.x > screen_w {
-            self.ball.pos.x = screen_w * 0.5;
-            self.ball.pos.y = screen_h * 0.5;
+            self.ball.reset();
             randomize_vec(&mut self.ball.vel, BALL_SPEED, BALL_SPEED);
             self.player_1_score += 1;
         }
