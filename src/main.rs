@@ -33,6 +33,20 @@ impl Ball {
     fn reset(&mut self) {
         // set pos back to home
         self.pos = self.home;
+        // randomize the velocity vector
+        self.vel.x = match fastrand::bool() {
+            true => BALL_SPEED,
+            false => -BALL_SPEED,
+        };
+        self.vel.y = match fastrand::bool() {
+            true => BALL_SPEED,
+            false => -BALL_SPEED,
+        };
+    }
+
+    // move the ball
+    fn update(&mut self, dt: f32) {
+        self.pos += self.vel * dt;
     }
 }
 
@@ -59,18 +73,6 @@ fn ball_hits_player(player: na::Point2<f32>, ball: na::Point2<f32>) -> bool {
         return true;
     }
     false
-}
-
-// pick a random direction vector
-fn randomize_vec(vec: &mut na::Vector2<f32>, x: f32, y: f32) {
-    vec.x = match fastrand::bool() {
-        true => x,
-        false => -x,
-    };
-    vec.y = match fastrand::bool() {
-        true => y,
-        false => -y,
-    };
 }
 
 struct MainState {
@@ -123,7 +125,7 @@ impl MainState {
                 graphics::WHITE,
             )?,
         };
-        randomize_vec(&mut ball.vel, BALL_SPEED, BALL_SPEED);
+        ball.reset();
 
         // return the struct
         Ok(MainState {
@@ -148,18 +150,16 @@ impl event::EventHandler for MainState {
         move_racket(&mut self.player_2_pos, KeyCode::Down, 1.0, ctx);
 
         // move the ball
-        self.ball.pos += self.ball.vel * dt;
+        self.ball.update(dt);
 
         // ball reached left side of screen
         if self.ball.pos.x < 0.0 {
             self.ball.reset();
-            randomize_vec(&mut self.ball.vel, BALL_SPEED, BALL_SPEED);
             self.player_2_score += 1;
         }
         // ball reached right side of screen
         if self.ball.pos.x > screen_w {
             self.ball.reset();
-            randomize_vec(&mut self.ball.vel, BALL_SPEED, BALL_SPEED);
             self.player_1_score += 1;
         }
 
