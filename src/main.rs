@@ -67,6 +67,11 @@ impl Ball {
     }
 }
 
+struct Racket {
+    pos: na::Point2<f32>,
+    mesh: graphics::Mesh,
+}
+
 enum CollisionType {
     Wall,
     Racket, // TODO: implement this enum
@@ -101,12 +106,11 @@ fn ball_hits_player(player: na::Point2<f32>, ball: na::Point2<f32>) -> bool {
 }
 
 struct MainState {
-    player_1_pos: na::Point2<f32>,
-    player_2_pos: na::Point2<f32>,
+    racket_left: Racket,
+    racket_right: Racket,
     ball: Ball,
     player_1_score: i32,
     player_2_score: i32,
-    racket_mesh: graphics::Mesh,
     middle_mesh: graphics::Mesh,
 }
 
@@ -114,20 +118,6 @@ impl MainState {
     pub fn new(ctx: &mut Context) -> GameResult<MainState> {
         let (screen_w, screen_h) = graphics::drawable_size(ctx);
         let (screen_w_half, screen_h_half) = (screen_w * 0.5, screen_h * 0.5);
-
-        //define the racket
-        let racket_rect = graphics::Rect::new(
-            -RACKET_WIDTH_HALF,
-            -RACKET_HEIGHT_HALF,
-            RACKET_WIDTH,
-            RACKET_HEIGHT,
-        );
-        let racket_mesh = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            racket_rect,
-            graphics::WHITE,
-        )?;
 
         // define the middle net line
         let middle_rect = graphics::Rect::new(-MIDDLE_LINE_W * 0.5, 0.0, MIDDLE_LINE_W, screen_h);
@@ -153,14 +143,44 @@ impl MainState {
         };
         ball.reset();
 
+        // Create the left paddle
+        let racket_left = Racket {
+            pos: na::Point2::new(RACKET_WIDTH_HALF + PADDING, screen_h_half),
+            mesh: graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                graphics::Rect::new(
+                    -RACKET_WIDTH_HALF,
+                    -RACKET_HEIGHT_HALF,
+                    RACKET_WIDTH,
+                    RACKET_HEIGHT,
+                ),
+                graphics::WHITE,
+            )?,
+        };
+
+        let racket_right = Racket {
+            pos: na::Point2::new(screen_w - RACKET_WIDTH_HALF - PADDING, screen_h_half),
+            mesh: graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                graphics::Rect::new(
+                    -RACKET_WIDTH_HALF,
+                    -RACKET_HEIGHT_HALF,
+                    RACKET_WIDTH,
+                    RACKET_HEIGHT,
+                ),
+                graphics::WHITE,
+            )?,
+        };
+
         // return the struct
         Ok(MainState {
-            player_1_pos: na::Point2::new(RACKET_WIDTH_HALF + PADDING, screen_h_half),
-            player_2_pos: na::Point2::new(screen_w - RACKET_WIDTH_HALF - PADDING, screen_h_half),
+            racket_left,
+            racket_right,
             ball,
             player_1_score: 0,
             player_2_score: 0,
-            racket_mesh,
             middle_mesh,
         })
     }
@@ -170,10 +190,11 @@ impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         let dt = ggez::timer::delta(ctx).as_secs_f32();
 
-        move_racket(&mut self.player_1_pos, KeyCode::W, -1.0, ctx);
-        move_racket(&mut self.player_1_pos, KeyCode::S, 1.0, ctx);
-        move_racket(&mut self.player_2_pos, KeyCode::Up, -1.0, ctx);
-        move_racket(&mut self.player_2_pos, KeyCode::Down, 1.0, ctx);
+        // move the rackets
+        move_racket(&mut self.racket_left.pos, KeyCode::W, -1.0, ctx);
+        move_racket(&mut self.racket_left.pos, KeyCode::S, 1.0, ctx);
+        move_racket(&mut self.racket_right.pos, KeyCode::Up, -1.0, ctx);
+        move_racket(&mut self.racket_right.pos, KeyCode::Down, 1.0, ctx);
 
         // move the ball
         self.ball.update(dt);
@@ -197,11 +218,11 @@ impl event::EventHandler for MainState {
             _ => (),
         }
 
-        if ball_hits_player(self.player_1_pos, self.ball.pos) {
+        if ball_hits_player(self.racket_left.pos, self.ball.pos) {
             self.ball.vel.x = self.ball.vel.x.abs();
         }
 
-        if ball_hits_player(self.player_2_pos, self.ball.pos) {
+        if ball_hits_player(self.racket_right.pos, self.ball.pos) {
             self.ball.vel.x = -self.ball.vel.x.abs();
         }
 
@@ -221,12 +242,12 @@ impl event::EventHandler for MainState {
         graphics::draw(ctx, &self.middle_mesh, draw_param)?;
 
         // draw racket 1
-        draw_param.dest = self.player_1_pos.into();
-        graphics::draw(ctx, &self.racket_mesh, draw_param)?;
+        draw_param.dest = self.racket_left.pos.into();
+        graphics::draw(ctx, &self.racket_left.mesh, draw_param)?;
 
         // draw racket 2
-        draw_param.dest = self.player_2_pos.into();
-        graphics::draw(ctx, &self.racket_mesh, draw_param)?;
+        draw_param.dest = self.racket_right.pos.into();
+        graphics::draw(ctx, &self.racket_right.mesh, draw_param)?;
 
         // draw ball
         draw_param.dest = self.ball.pos.into();
